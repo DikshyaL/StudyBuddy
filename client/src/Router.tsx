@@ -20,6 +20,7 @@ import ChatRoom from './pages/ChatRoom';
 import Landing from './pages/Landing';
 import RoomPage from "./pages/room/Room";
 import LobbyScreen from "./pages/lobby/Lobby";
+import CommentPage from "./pages/comment.tsx";
 
 
 // Create your router configuration
@@ -59,6 +60,10 @@ const router = createBrowserRouter([
           {
             path: "/room/:id",
             element: <ChatForm />,
+          },
+          {
+            path:"/posts/:postId/comments",
+            element:<CommentPage/>,
           },
           // {
           //   path: "/roomvideo/:room",

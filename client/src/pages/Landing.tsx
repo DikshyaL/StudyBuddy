@@ -90,6 +90,9 @@ const Landing: React.FC = () => {
   const goToFormPost = () => {
     navigate('/PostForm');
   };
+  const goTocomment=(postId:string)=>{
+    navigate(`/posts/${postId}/comments`);
+  }
 
   return (
     <div className="flex flex-col w-full">
@@ -167,9 +170,11 @@ const Landing: React.FC = () => {
                       <span>{post.downvotes}</span>
                     </button>
                   </div>
-                  <div className="flex items-center text-gray-500">
+                  <div className="flex items-center text-gray-500" >
+                    <button onClick={()=>goTocomment(post._id)}>
                     <FontAwesomeIcon icon={faComment} className="mr-1  text-2xl" />
                     <span>{post.comments}</span>
+                    </button>
                   </div>
                 </div>
               </div>

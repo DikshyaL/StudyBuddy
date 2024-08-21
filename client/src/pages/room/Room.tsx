@@ -218,7 +218,7 @@ const RoomPage = () => {
     setSecondUser(false);
     // Notify the server to remove the user from the room
     axios({
-      url: "http://192.168.137.90:8001/roomcount",
+      url: "http://172.18.121.52:8001/roomcount",
       method: "POST",
       headers: {
         "Content-Type": "application/json",

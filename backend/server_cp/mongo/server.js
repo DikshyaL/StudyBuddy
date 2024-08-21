@@ -36,8 +36,20 @@ const emailSchema = new mongoose.Schema({
   email: String,
 });
 
+
+const commentSchema = new mongoose.Schema({
+  content: { type: String, required: true },
+  username: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Example reference to a User model
+  upvotes: Number,
+  downvotes: Number,
+  profile_pic:String,
+});
+
+
 const PostCollection = mongoose.model('StuddyBuddy', postSchema, 'Posts');
 const EmailCollection = mongoose.model('StudyBuddy', emailSchema, 'Users');
+const Post = mongoose.model('studybuddy', postSchema,'Posts');
+const Comment = mongoose.model('Comment', commentSchema);
 
 app.get('/api/user-posts', async (req, res) => {
   const { username } = req.query;
@@ -211,6 +223,33 @@ app.get('/api/user-email', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user email' });
   }
 });
+
+
+app.get('/api/postid', async (req, res) => {
+  const { postId } = req.query;
+  console.log('Requested post ID:', postId);
+
+  try {
+    // Validate postId
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ error: 'Invalid post ID format' });
+    }
+
+    // Fetch post data from MongoDB
+    const post = await Post.findById(postId).populate('comment').exec();
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    res.status(200).json(post);
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    res.status(500).json({ error: 'Failed to fetch post' });
+  }
+});
+
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

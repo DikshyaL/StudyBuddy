@@ -125,6 +125,9 @@ const Profile: React.FC = () => {
       )
     );
   };
+  const goTocomment=(postId:string)=>{
+    navigate(`/posts/${postId}/comments`);
+  }
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen">
@@ -202,15 +205,15 @@ const Profile: React.FC = () => {
                         <button onClick={() => handleDislike(post._id)}>
                           <FontAwesomeIcon
                             icon={faCircleDown}
-                            className={`text-2xl ${post.userVote === 'downvoted' ? "text-emerald-800" : "text-black"}`}
+                            className={`text-2xl ${post.userVote === 'downvoted' ? "text-emerald-800" : "text-gray-500"}`}
                           />
-                          <span className={`ml-2 ${post.userVote === 'downvoted' ? "text-emerald-800" : "text-black"}`}>
+                          <span className={`ml-2 ${post.userVote === 'downvoted' ? "text-emerald-800" : "text-gray-500"}`}>
                             {post.downvotes}
                           </span>
                         </button>
                       </div>
-                      <button>
-                        <FontAwesomeIcon icon={faComment} className="text-2xl" />
+                      <button onClick={()=>goTocomment(post._id)}>
+                        <FontAwesomeIcon icon={faComment} className="text-2xl text-gray-500" />
                         <span className="ml-2">{post.comments}</span>
                       </button>
                     </div>

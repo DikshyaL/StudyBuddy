@@ -1,151 +1,168 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import axios from 'axios';
 import NavBar from './NavBar';
 import Sidebar from './SideBar';
 import profilepic from "../assets/profile.png";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleUp, faCircleDown, faPaperclip } from '@fortawesome/free-solid-svg-icons';
+import { useAuth } from '../context/AuthContext';
 
 interface CommentData {
-  id: number;
+  _id: string;
   username: string;
   content: string;
-  likes: number;
-  dislikes: number;
-  file?: File | null;
+  file?: {
+    name: string;
+    url: string;
+  } | null;
 }
 
 interface PostData {
-  id: number;
+  _id: string;
+  user_id: string;
   username: string;
-  profilePic: string;
-  content: string;
-  likes: number;
-  dislikes: number;
+  upvotes: number;
+  downvotes: number;
+  subject: string;
+  post_content: string;
+  profile_pic: string;
+  comments: CommentData[]; 
+  userVote: 'upvoted' | 'downvoted' | null;
 }
 
 const CommentPage: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const [comments, setComments] = useState<CommentData[]>([]);
   const [newComment, setNewComment] = useState<string>('');
-  const [commentUsername, setCommentUsername] = useState<string>(''); // Assuming this is the username of the logged-in user
-  const [file, setFile] = useState<File | null>(null); // For handling file upload
-  const [posts, setPosts] = useState<PostData[]>([
-    {
-      id: parseInt(postId || '0'),
-      username: 'username',
-      profilePic: profilepic,
-      content: 'This is the post content.',
-      likes: 0,
-      dislikes: 0,
-    }
-  ]);
+  const [file, setFile] = useState<File | null>(null);
+  const [post, setPost] = useState<PostData | null>(null);
+  const { username } = useAuth();
+  const [showReportMenu, setShowReportMenu] = useState<string | null>(null);
 
   useEffect(() => {
-   
-    const fetchCurrentUser = async () => {
-      const username = await getCurrentUsername();
-      setCommentUsername(username);
+    const fetchPost = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3001/api/postid`, {
+          params: { postId }
+        });
+
+        console.log('Post Data Response:', response.data);
+
+        // Assuming response.data is the post object
+        const fetchedPost = response.data;
+        setPost(fetchedPost); // Update state with fetched post
+      } catch (error) {
+        console.error('Error fetching post data:', error);
+      }
     };
 
-    fetchCurrentUser();
-  }, []);
+    if (postId) {
+      fetchPost(); // Call fetchPost function when postId exists or changes
+    }
 
-  const getCurrentUsername = async () => {
-    
-    return 'current user';
-  };
+  }, [postId]); // Dependency array to watch changes in postId
 
-  const handleCommentSubmit = () => {
-    if (newComment && commentUsername) {
-      const comment: CommentData = {
-        id: comments.length + 1,
-        username: commentUsername,
+  if (!post) {
+    return <div>Loading...</div>; // Placeholder UI while fetching data
+  }
+
+  const handleCommentSubmit = async () => {
+    if (newComment && username) {
+      const newCommentData: CommentData = {
+        _id: `temp_${comments.length + 1}`,
+        username: username,
         content: newComment,
-        likes: 0,
-        dislikes: 0,
-        file: file,
+        file: file ? { name: file.name, url: URL.createObjectURL(file) } : null,
       };
-      setComments([comment, ...comments]); 
+
+      setComments([newCommentData, ...comments]);
       setNewComment('');
       setFile(null);
+
+      try {
+        console.log('Simulating comment post:', newCommentData);
+      } catch (error) {
+        console.error('Error posting comment:', error);
+      }
     }
   };
 
-  const handleLike = (commentId: number) => {
-    setComments((prevComments) =>
-      prevComments.map((comment) =>
-        comment.id === commentId
-          ? {
-            ...comment,
-            likes: comment.likes === 1 ? 0 : 1,
-            dislikes: 0,
-          }
-          : comment
-      )
-    );
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFile(e.target.files[0]);
+    }
   };
 
-  const handleDislike = (commentId: number) => {
-    setComments((prevComments) =>
-      prevComments.map((comment) =>
-        comment.id === commentId
-          ? {
-            ...comment,
-            dislikes: comment.dislikes === 1 ? 0 : 1,
-            likes: 0,
-          }
-          : comment
-      )
-    );
+  const handlePostLike = () => {
+    if (post) {
+      setPost(prevPost => ({
+        ...prevPost,
+        upvotes: prevPost.userVote === 'upvoted' ? prevPost.upvotes - 1 : prevPost.upvotes + 1,
+        downvotes: prevPost.userVote === 'downvoted' ? prevPost.downvotes - 1 : prevPost.downvotes,
+        userVote: prevPost.userVote === 'upvoted' ? null : 'upvoted', 
+      }));
+    }
+  };
+
+  const handlePostDislike = () => {
+    if (post) {
+      setPost(prevPost => ({
+        ...prevPost,
+        downvotes: prevPost.userVote === 'downvoted' ? prevPost.downvotes - 1 : prevPost.downvotes + 1,
+        upvotes: prevPost.userVote === 'upvoted' ? prevPost.upvotes - 1 : prevPost.upvotes,
+        userVote: prevPost.userVote === 'downvoted' ? null : 'downvoted', 
+      }));
+    }
+  };
+
+  const toggleReportMenu = (postId: string) => {
+    setShowReportMenu(showReportMenu === postId ? null : postId);
   };
 
   return (
     <div className="flex flex-col w-full h-full">
       <NavBar />
       <div className="flex flex-row flex-1 overflow-hidden">
-        <div className="w-1/6 transparent">
-          <div className="fixed w-full">
-            <Sidebar />
-          </div>
-        </div>
+        <Sidebar />
         <div className="flex flex-col w-full overflow-auto p-4">
-          {posts.map((post) => (
-            <div key={post.id} className="post bg-white p-6 rounded-lg shadow-md">
+          {post && (
+            <div key={post._id} className="post bg-white p-6 rounded-lg shadow-md">
               <div className="post-header flex items-center mb-4">
-                <img src={post.profilePic} alt={`${post.username}'s profile`} className="w-12 h-12 rounded-full mr-4" />
+                <img src={profilepic} alt={`${post.username}'s profile`} className="w-12 h-12 rounded-full mr-4" />
                 <h3 className="text-lg font-semibold">{post.username}</h3>
               </div>
-              <p className="text-gray-700 mb-4">{post.content}</p>
+              <h3 className="text-sm">{post.subject}</h3>
+              <p className="text-gray-700 mb-4">{post.post_content}</p>
               <div className="post-actions flex space-x-4">
-                <button onClick={() => handleLike(post.id)} >
+                <button onClick={handlePostLike}>
                   <FontAwesomeIcon
                     icon={faCircleUp}
-                    className={`text-2xl ${post.likes > 0 ? "text-emerald-800" : "text-gray-500"}`}
+                    className={`text-2xl ${post.userVote === 'upvoted' ? "text-emerald-800" : "text-gray-500"}`}
                   />
-                  <span className={`ml-2 ${post.likes > 0 ? "text-emerald-800" : "text-gray-500"}`}>
-                    {post.likes}
+                  <span className={`ml-2 ${post.userVote === 'upvoted' ? "text-emerald-800" : "text-gray-500"}`}>
+                    {post.upvotes}
                   </span>
                 </button>
-                <button onClick={() => handleDislike(post.id)}>
+                <button onClick={handlePostDislike}>
                   <FontAwesomeIcon
                     icon={faCircleDown}
-                    className={`text-2xl ${post.dislikes > 0 ? "text-emerald-800" : "text-gray-500"}`}
+                    className={`text-2xl ${post.userVote === 'downvoted' ? "text-emerald-800" : "text-gray-500"}`}
                   />
-                  <span className={`ml-2 ${post.dislikes > 0 ? "text-emerald-800" : "text-gray-500"}`}>
-                    {post.dislikes}
+                  <span className={`ml-2 ${post.userVote === 'downvoted' ? "text-emerald-800" : "text-gray-500"}`}>
+                    {post.downvotes}
                   </span>
                 </button>
               </div>
             </div>
-          ))}
+          )}
           <div className="comment-form bg-white p-6 rounded-lg shadow-md mt-6">
             <h4 className="text-lg font-semibold mb-4">Leave a comment</h4>
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center text-black">
                 <img src={profilepic} alt="Your profile" className="w-8 h-8 rounded-full mr-2" />
-                <span>{commentUsername}</span>
+                <span>{username}</span>
               </div>
             </div>
             <textarea
@@ -161,7 +178,7 @@ const CommentPage: React.FC = () => {
               <input
                 id="file-upload"
                 type="file"
-                onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+                onChange={handleFileChange}
                 className="hidden"
               />
               <button onClick={handleCommentSubmit} className="bg-emerald-800 text-white px-4 py-2 rounded-full hover:bg-emerald-800 transition-transform transform hover:scale-110">
@@ -171,40 +188,24 @@ const CommentPage: React.FC = () => {
           </div>
           <div className="comments bg-white p-6 rounded-lg shadow-md mt-6">
             <h4 className="text-lg font-semibold mb-4">Comments</h4>
-            {comments.map((comment, index) => (
-              <div key={comment.id} className="comment mb-4">
-                <div className="flex items-center">
-                  <img src={profilepic} alt="Your profile" className="w-8 h-8 rounded-full mr-2" />
-                  <h5 className="font-semibold">{comment.username}</h5>
-                </div>
-                <p className="text-gray-700">{comment.content}</p>
-                {comment.file && (
-                  <div className="file-attachment">
-                    <span>Attachment: {comment.file.name}</span>
+            {comments && comments.length > 0 ? (
+              comments.map((comment) => (
+                <div key={comment._id} className="comment mb-4">
+                  <div className="flex items-center">
+                    <img src={profilepic} alt="Your profile" className="w-8 h-8 rounded-full mr-2" />
+                    <h5 className="font-semibold">{comment.username}</h5>
                   </div>
-                )}
-                <div className="post-actions flex space-x-4">
-                  <button onClick={() => handleLike(comment.id)} className="mr-2">
-                    <FontAwesomeIcon
-                      icon={faCircleUp}
-                      className={`text-2xl ${comment.likes > 0 ? "text-emerald-800" : "text-black"}`}
-                    />
-                    <span className={`ml-2 ${comment.likes > 0 ? "text-emerald-800" : "text-black"}`}>
-                      {comment.likes}
-                    </span>
-                  </button>
-                  <button onClick={() => handleDislike(comment.id)}>
-                    <FontAwesomeIcon
-                      icon={faCircleDown}
-                      className={`text-2xl ${comment.dislikes > 0 ? "text-emerald-800" : "text-black"}`}
-                    />
-                    <span className={`ml-2 ${comment.dislikes > 0 ? "text-emerald-800" : "text-black"}`}>
-                      {comment.dislikes}
-                    </span>
-                  </button>
+                  <p className="text-gray-700">{comment.content}</p>
+                  {comment.file && (
+                    <div className="file-attachment">
+                      <span>Attachment: {comment.file.name}</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p>No comments available</p>
+            )}
           </div>
         </div>
       </div>
@@ -213,4 +214,3 @@ const CommentPage: React.FC = () => {
 };
 
 export default CommentPage;
-

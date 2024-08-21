@@ -154,6 +154,9 @@ const CommunityPosts: React.FC = () => {
   const goToFormPost = () => {
     navigate('/PostForm');
   };
+  const goTocomment=(postId:string)=>{
+    navigate(`/posts/${postId}/comments`);
+  }
 
   return (
     <div className="flex flex-col w-full">
@@ -228,17 +231,17 @@ const CommunityPosts: React.FC = () => {
                     <button onClick={() => handleDislike(post._id)}>
                       <FontAwesomeIcon
                         icon={faCircleDown}
-                        className={`text-2xl ${post.userVote === 'downvoted' ? "text-red-500" : "text-gray-500"}`}
+                        className={`text-2xl ${post.userVote === 'downvoted' ? "text-emerald-800" : "text-gray-500"}`}
                       />
-                      <span className={`ml-2 ${post.userVote === 'downvoted' ? "text-red-500" : "text-gray-500"}`}>
+                      <span className={`ml-2 ${post.userVote === 'downvoted' ? "text-emerald-800" : "text-gray-500"}`}>
                         {post.downvotes}
                       </span>
                     </button>
                   </div>
                   <div className="flex-grow"></div>
-                  <button>
+                  <button onClick={()=>goTocomment(post._id)}>
                     <FontAwesomeIcon icon={faComment} className="text-2xl text-gray-500" />
-                    <span className="ml-2">{post.comments}</span>
+                    <span className="ml-2" >{post.comments}</span>
                   </button>
                 </div>
               </div>
